@@ -5,5 +5,37 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "fastapi>=0.136.0",
+    "uvicorn[standard]>=0.34.0",
+    "pymongo>=4.10.1",
+    "pydantic>=2.13.3",
+    "pydantic-settings>=2.14.0",
     "pypdf>=6.10.2",
+    "python-multipart>=0.0.20",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4.0",
+    "pytest-asyncio>=0.26.0",
+    "httpx>=0.24.0,<1.0.0",
+    "mongomock>=4.3.0",
+    "black>=26.3.0",
+    "flake8>=7.2.0",
+    "mypy>=1.20.1",
+    "isort>=8.0.1",
+]
+
+pdf = [
+    "pdfplumber>=0.11.9",
+]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+addopts = "-p no:cacheprovider"
