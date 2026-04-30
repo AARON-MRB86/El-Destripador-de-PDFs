@@ -1,113 +1,176 @@
-# El-Destripador-de-PDFs
-Repositorio general
+﻿# El Destripador de PDFs
 
-El-Destripador-de-PDFs es una API REST desarrollada en Python cuyo propósito es procesar documentos PDF de manera segura y eficiente.
-La aplicación permite recibir archivos PDF, validar su formato y tamaño, extraer su contenido textual y generar un checksum para evitar duplicados.
-Posteriormente, persiste la información extraída en una base de datos NoSQL y expone operaciones CRUD para la administración de los documentos almacenados.
+API REST en Python para la ingestión, validación y extracción de texto de documentos PDF.
 
-El proyecto se desarrolla uscando aplicar los principios de arquitectura limpia y metodología TDD para garantizar calidad, mantenibilidad y escalabilidad.
+La aplicación permite cargar archivos PDF con un nombre asociado, validar su formato y tamaño, extraer el texto usando `pypdf`, generar un checksum SHA-256 para detectar duplicados y almacenar la información en MongoDB.
 
-Objetivos del proyecto
-Proveer una API confiable para la ingesta de documentos PDF.
-Extraer únicamente el contenido textual relevante del archivo.
-Garantizar unicidad mediante checksum para evitar duplicados.
-Implementar una base de datos NoSQL para persistir la información procesada.
-Permitir la gestión completa de los documentos mediante CRUD.
-Mantener una base de código modular, desacoplada y testeada.
-Funcionalidades principales
-Recepción de archivos PDF desde peticiones HTTP.
-Validación del tipo y tamaño del documento.
-Extracción de texto sin almacenar el PDF en el disco.
-Generación de checksum para identificación única.
-Persistencia del contenido en una base NoSQL.
-Prevención de duplicados.
-CRUD completo sobre los documentos almacenados.
-Arquitectura del sistema
+## Características
 
-La estructura del proyecto sigue una arquitectura en capas:
-    -Capa de API: controladores, rutas y manejo de solicitudes.
-    -Capa de servicios: lógica de negocio y control de flujo.
-    -Capa de dominio: entidades, modelos y reglas fundamentales.
-    -Capa de infraestructura: repositorios, integraciones y base de datos.
-Este diseño favorece la mantenibilidad, extensibilidad y testeo del sistema.
+- Carga de archivos PDF usando `multipart/form-data`.
+- Validación de extensión `.pdf`, tamaño máximo configurable y firma PDF.
+- Extracción de texto en memoria sin escribir el PDF en disco.
+- Generación de checksum SHA-256 para evitar documentos duplicados.
+- Persistencia de metadatos y texto extraído en MongoDB.
+- CRUD de documentos almacenados.
+- Endpoint para extraer o recuperar el texto ya procesado.
 
-Tecnologías utilizadas
--Python
--FastAPI
--uv (gestor de dependencias y ejecución)
--Base de datos NoSQL
--Pytest (para TDD)
--Metodología de desarrollo
+## Estructura del proyecto
 
-El proyecto se desarrolla empleando Test-Driven Development (TDD), siguiendo el ciclo:
-    -Red: escribir una prueba que falle.
-    -Green: implementar el código mínimo para pasar la prueba.
-    -Refactor: mejorar el código manteniendo las pruebas en verde.
-Además, se aplican principios de diseño como:
-    -SOLID
-    -DRY
-    -KISS
-    -YAGNI
-Todo ello con el objetivo de obtener un código limpio y mantenible.
+    El-Destripador-de-PDFs/
+    ├── App/
+    │   ├── api/                # Rutas y controladores
+    │   ├── config/             # Configuración de la aplicación
+    │   ├── domain/             # Entidades y modelos de dominio
+    │   ├── infrastructure/     # Repositorios e integración con MongoDB
+    │   ├── models/             # Modelos de dominio
+    │   ├── repositories/       # Acceso a datos
+    │   ├── schemas/            # Esquemas de validación y respuesta
+    │   ├── services/           # Lógica de negocio
+    │   └── utils/              # Utilidades de base de datos
+    ├── pyproject.toml          # Configuración del proyecto y dependencias
+    └── README.md
 
-Restricciones
-    -No se almacenan archivos PDF en el sistema de archivos.
-    -No se permite la persistencia temporal del archivo durante el procesamiento.
-    -No se almacenan documentos duplicados.
-Todo archivo debe ser validado antes de ser procesado.
+## Dependencias principales
 
+- Python 3.13+
+- FastAPI
+- Uvicorn
+- Pydantic / Pydantic Settings
+- pypdf
+- PyMongo
+- python-multipart
 
-Estructura del proyecto
-El-Destripador-de-PDFs/
-│
-├── app/
-│   ├── api/                # Rutas y controladores
-│   ├── services/           # Lógica de negocio
-│   ├── domain/             # Entidades y reglas
-│   ├── infrastructure/     # Base de datos y repositorios
-│   └── main.py             # Punto de entrada de la aplicación
-│
-├── tests/                  # Pruebas unitarias y de integración
-│
-├── pyproject.toml          # Configuración del proyecto y dependencias
-└── README.md
+Dependencias de desarrollo opcionales:
 
+- pytest
+- pytest-asyncio
+- httpx
+- mongomock
+- black
+- flake8
+- mypy
+- isort
 
-Instalación
-Clonar el repositorio:
-git clone https://github.com/AARON-MRB86/El-Destripador-de-PDFs.git
+## Endpoints principales
+
+### POST `/documents`
+Crear un documento a partir de un PDF subido.
+
+Campos del formulario:
+- `name`: nombre del documento
+- `file`: archivo PDF
+
+### GET `/documents`
+Listar documentos con paginación.
+Parámetros opcionales:
+- `skip`: cantidad de registros a omitir
+- `limit`: cantidad máxima de registros
+
+### GET `/documents/{document_id}`
+Obtener un documento por su ID.
+
+### PUT `/documents/{document_id}`
+Actualizar el nombre de un documento.
+
+Payload JSON:
+- `name`: nuevo nombre del documento
+
+### DELETE `/documents/{document_id}`
+Eliminar un documento.
+
+### POST `/documents/{document_id}/extract`
+Extraer o recuperar el texto del PDF asociado a un documento.
+
+## Modelo de respuesta
+
+El recurso `DocumentResponse` incluye campos como:
+
+- `id`
+- `name`
+- `original_filename`
+- `file_size`
+- `checksum`
+- `extracted_text`
+- `is_processed`
+- `created_at`
+- `updated_at`
+
+## Configuración
+
+La aplicación carga variables de entorno desde un archivo `.env` mediante `pydantic-settings`.
+
+Variables principales:
+
+- `DATABASE_URL`: URL de MongoDB, por ejemplo `mongodb://localhost:27017`
+- `DATABASE_NAME`: nombre de la base de datos
+- `DATABASE_TIMEOUT_MS`: tiempo de espera en milisegundos
+- `MAX_PDF_SIZE_BYTES`: tamaño máximo permitido para los PDF
+- `HOST`: host de arranque
+- `PORT`: puerto de la API
+
+Ejemplo de `.env`:
+
+```env
+DATABASE_URL=mongodb://localhost:27017
+DATABASE_NAME=pdf_extract
+DATABASE_TIMEOUT_MS=3000
+MAX_PDF_SIZE_BYTES=10485760
+HOST=0.0.0.0
+PORT=8000
+```
+
+## Instalación
+
+1. Clona el repositorio:
+
+```powershell
+git clone <repo-url>
 cd El-Destripador-de-PDFs
+```
 
-Instalar dependencias:
-uv sync
+2. Crea y activa un entorno virtual:
 
-Activar entorno virtual (si fuera necesario):
-.\venv\Scripts\activate
+```powershell
+python -m venv .venv
+.\.venv\Scripts\activate
+```
 
-Ejecución de la aplicación
-    Iniciar el servidor en modo desarrollo:
-    uv run uvicorn app.main:app --reload
+3. Instala las dependencias:
 
-La API quedará disponible en:
-http://localhost:8000
+```powershell
+pip install -e .
+```
 
-Documentación de la API
+4. Instala dependencias de desarrollo y PDF opcionales:
 
-FastAPI genera documentación interactiva:
+```powershell
+pip install -e ".[dev,pdf]"
+```
 
-Swagger: http://localhost:8000/docs
-ReDoc: http://localhost:8000/redoc
-Ejecución de pruebas
-uv run pytest
+## Ejecución
 
-Estado actual
+Inicia el servidor con Uvicorn:
 
-El proyecto se encuentra en etapa inicial de desarrollo.
-Se está construyendo la arquitectura, definiendo modelos, configurando el entorno de trabajo y preparando las bases para incorporar las funcionalidades en etapas posteriores.
+```powershell
+uvicorn app.main:app --reload
+```
 
-Próximos pasos
-Implementación de endpoints completos.
-Integración con la base de datos NoSQL.
-Validaciones avanzadas de PDF.
-Optimización del proceso de extracción de texto.
-Expansión de la suite de pruebas.
+La API estará disponible en:
+
+- `http://localhost:8000`
+- `http://localhost:8000/docs` (Swagger)
+- `http://localhost:8000/redoc` (ReDoc)
+
+## Pruebas
+
+Ejecuta la suite de pruebas:
+
+```powershell
+pytest
+```
+
+## Notas importantes
+
+- Los PDFs se validan en memoria.
+- Se comprueba el checksum para evitar registros duplicados.
+- La arquitectura del proyecto está separada en capas de rutas, servicios, dominio e infraestructura.
