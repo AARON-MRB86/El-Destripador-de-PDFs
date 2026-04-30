@@ -1,7 +1,7 @@
 [project]
 name = "EL-DESTRIPADOR-DE-PDFS"
 version = "0.1.0"
-description = "Add your description here"
+description = "Proyecto que consiste en una aplicación web extrae contenido de pdf y persiste texto"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
