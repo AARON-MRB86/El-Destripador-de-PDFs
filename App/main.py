@@ -12,9 +12,9 @@ from typing import Any
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import document_router
-from app.config import settings
-from app.utils.database import ensure_indexes, get_db, ping_database, close_client
+from App.api import document_router
+from App.config import settings
+from App.utils.database import ensure_indexes, get_db, ping_database, close_client
 
 logger = logging.getLogger(__name__)
 
