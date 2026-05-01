@@ -126,6 +126,13 @@ class DocumentRepository:
         )
         return int(counter["value"])
 
+    def _next_document_id(self) -> int:
+        """Backward-compatible alias for older tests and code that expect `_next_document_id`.
+
+        Returns the same value as `_next_id`.
+        """
+        return self._next_id()
+
     def _serialize(self, document: Document) -> dict[str, Any]:
         """Convert Document model to MongoDB document."""
         return document.model_dump(mode="python")

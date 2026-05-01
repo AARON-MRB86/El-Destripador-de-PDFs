@@ -3,15 +3,17 @@
 from io import BytesIO
 from pathlib import Path
 from typing import Any, List, Optional
+import hashlib
 
-from app.config import settings
-from app.models import Document
-from app.repositories import DocumentRepository
-from app.schemas import DocumentResponse, DocumentUpdate
+from App.config import settings
+from App.models import Document
+from App.repositories import DocumentRepository
+from App.schemas import DocumentResponse, DocumentUpdate
 
 
 class DocumentService:
     """Service for document business logic."""
+    PDF_SIGNATURE = b"%PDF-"
 
     def __init__(self, db: Any):
         """
