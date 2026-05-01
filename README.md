@@ -1,4 +1,12 @@
 ﻿# El Destripador de PDFs
+## Integrantes
+- Carolina Noelia Bravo
+- Victoria Rios
+- Ana Gómez
+- Aarón Martin Reveco Bustos
+- Agustín Carbajal
+- Pablo Valentin la Torre
+
 
 API REST en Python para la ingestión, validación y extracción de texto de documentos PDF.
 
