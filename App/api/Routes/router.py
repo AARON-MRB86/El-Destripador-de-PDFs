@@ -1,9 +1,8 @@
 """Document API endpoints."""
 
-from typing import List
-from typing import Any
+from typing import Any, List
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, UploadFile, status
 
 from app.schemas import DocumentResponse, DocumentUpdate
 from app.services import DocumentService
@@ -13,7 +12,7 @@ router = APIRouter(prefix="/documents", tags=["documentos"])
 
 
 def get_document_service(db: Any = Depends(get_db)) -> DocumentService:
-    """Dependencia para obtener el servicio de documentos."""
+    """Dependency to obtain document service."""
     return DocumentService(db)
 
 
@@ -29,22 +28,20 @@ async def create_document(
     service: DocumentService = Depends(get_document_service),
 ) -> DocumentResponse:
     """
-    Crear un nuevo documento a partir de un archivo PDF subido.
-    El PDF se valida y se procesa completamente en memoria.
+    Create a new document from uploaded PDF.
+    The PDF is validated and processed in memory.
 
     Args:
-        name: Nombre del documento
-        file: Archivo PDF subido por el cliente
-        service: Servicio de documentos
+        name: Document name
+        file: PDF file uploaded by client
+        service: Document service
 
     Returns:
-        Documento creado
+        Created document
     """
+    file_content = await file.read()
     try:
-        file_content = await file.read()
         return service.create_document(name, file.filename, file_content)
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     finally:
         await file.close()
 
@@ -58,15 +55,15 @@ async def list_documents(
     service: DocumentService = Depends(get_document_service),
 ) -> List[DocumentResponse]:
     """
-    Listar todos los documentos con paginacion.
+    List all documents with pagination.
 
     Args:
-        skip: Cantidad de registros a omitir
-        limit: Cantidad maxima de registros
-        service: Servicio de documentos
+        skip: Number of records to skip
+        limit: Maximum number of records
+        service: Document service
 
     Returns:
-        Lista de documentos
+        List of documents
     """
     return service.get_all_documents(skip, limit)
 
@@ -80,25 +77,16 @@ async def get_document(
     document_id: int, service: DocumentService = Depends(get_document_service)
 ) -> DocumentResponse:
     """
-    Obtener un documento por su ID.
+    Get a document by ID.
 
     Args:
-        document_id: ID del documento
-        service: Servicio de documentos
+        document_id: Document ID
+        service: Document service
 
     Returns:
-        Detalle del documento
-
-    Raises:
-        HTTPException: Si el documento no existe
+        Document details
     """
-    document = service.get_document(document_id)
-    if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Documento {document_id} no encontrado",
-        )
-    return document
+    return service.get_document(document_id)
 
 
 @router.put(
@@ -112,29 +100,17 @@ async def update_document(
     service: DocumentService = Depends(get_document_service),
 ) -> DocumentResponse:
     """
-    Actualizar un documento.
+    Update a document.
 
     Args:
-        document_id: ID del documento
-        document_data: Datos del documento a actualizar
-        service: Servicio de documentos
+        document_id: Document ID
+        document_data: Document data to update
+        service: Document service
 
     Returns:
-        Documento actualizado
-
-    Raises:
-        HTTPException: Si el documento no existe
+        Updated document
     """
-    try:
-        document = service.update_document(document_id, document_data)
-        if not document:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Documento {document_id} no encontrado",
-            )
-        return document
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    return service.update_document(document_id, document_data)
 
 
 @router.delete(
@@ -144,23 +120,15 @@ async def update_document(
 )
 async def delete_document(
     document_id: int, service: DocumentService = Depends(get_document_service)
-):
+) -> None:
     """
-    Eliminar un documento.
+    Delete a document.
 
     Args:
-        document_id: ID del documento
-        service: Servicio de documentos
-
-    Raises:
-        HTTPException: Si el documento no existe
+        document_id: Document ID
+        service: Document service
     """
-    success = service.delete_document(document_id)
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Documento {document_id} no encontrado",
-        )
+    service.delete_document(document_id)
 
 
 @router.post(
@@ -172,26 +140,14 @@ async def extract_text(
     document_id: int, service: DocumentService = Depends(get_document_service)
 ) -> DocumentResponse:
     """
-    Obtener el texto real de un documento PDF.
-    Si el documento ya fue procesado en memoria, devuelve el resultado almacenado.
+    Extract text from a PDF document.
+    If already processed in memory, returns stored result.
 
     Args:
-        document_id: ID del documento
-        service: Servicio de documentos
+        document_id: Document ID
+        service: Document service
 
     Returns:
-        Documento con el texto extraido
-
-    Raises:
-        HTTPException: Si el documento no existe o falla la extraccion
+        Document with extracted text
     """
-    try:
-        document = service.extract_text(document_id)
-        if not document:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Documento {document_id} no encontrado",
-            )
-        return document
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    return service.extract_text(document_id)
