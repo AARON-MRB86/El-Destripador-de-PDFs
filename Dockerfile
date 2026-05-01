@@ -12,7 +12,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy project files
 COPY pyproject.toml .
-COPY setup.cfg . 2>/dev/null || true
+# Optional: `setup.cfg` may be absent in editable installs; skip copying it to avoid
+# failing the build when it's not present in the repo.
 COPY App/ ./App/
 COPY README.md ./
 

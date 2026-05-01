@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     api_docs_url: Optional[str] = "/docs"
     api_redoc_url: Optional[str] = "/redoc"
     api_openapi_url: Optional[str] = "/openapi.json"
+    cors_allow_origins: Optional[list[str]] = None
 
     @field_validator("debug", mode="before")
     @classmethod
