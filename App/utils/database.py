@@ -13,7 +13,7 @@ from pymongo import ASCENDING, MongoClient
 from pymongo.database import Database
 from pymongo.errors import PyMongoError
 
-from app.config import settings
+from App.config import settings
 
 <<<<<<< HEAD
 

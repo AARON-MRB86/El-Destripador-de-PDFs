@@ -151,3 +151,4 @@ async def extract_text(
         Document with extracted text
     """
     return service.extract_text(document_id)
+

@@ -1,7 +1,6 @@
-"""
-Servicios del proyecto.
-Extraer texto del PDF, calcular checksum, validar duplicados, etc.
-"""
+"""App services package exports service classes used by the application."""
 
-from .documento_service import DocumentoService
+from .documento_service import DocumentService
+
+__all__ = ["DocumentService"]
 
