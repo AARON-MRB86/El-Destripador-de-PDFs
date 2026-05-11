@@ -139,4 +139,5 @@ migrations/
 # Snyk Security Extension
 .github/instructions/snyk_rules.instructions.md
 
-README.md
+# Backup files
+App/main_fixed.py
