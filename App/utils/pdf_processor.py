@@ -4,7 +4,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Union
 
-from app.exceptions import PdfExtractionError
+from App.exceptions import PdfExtractionError
 
 
 class PdfTextExtractor:

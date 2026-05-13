@@ -3,7 +3,7 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-from app.exceptions import (
+from App.exceptions import (
     DuplicateDocumentError,
     DocumentException,
     DocumentNotFoundError,
