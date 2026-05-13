@@ -5,10 +5,10 @@ from pathlib import Path
 from typing import Any, List, Optional
 import hashlib
 
-from App.config import settings
-from App.models import Document
-from App.repositories import DocumentRepository
-from App.schemas import DocumentResponse, DocumentUpdate
+from app.config import settings
+from app.models import Document
+from app.repositories import DocumentRepository
+from app.schemas import DocumentResponse, DocumentUpdate
 
 
 class DocumentService:
