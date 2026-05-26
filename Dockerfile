@@ -5,21 +5,29 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# system deps for optional PDF libs (kept minimal)
+# Dependencias del sistema
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy project files
+# Copiar archivos necesarios
 COPY pyproject.toml .
-# Optional: `setup.cfg` may be absent in editable installs; skip copying it to avoid
-# failing the build when it's not present in the repo.
-COPY App/ ./App/
 COPY README.md ./
+COPY App/ ./App/
 
-# Install runtime dependencies via pip
+# Instalar dependencias
 RUN pip install --upgrade pip setuptools wheel \
     && pip install --no-cache-dir .
+
+# Crear usuario seguro
+RUN useradd --create-home --home-dir /home/appuser appuser
+
+# Dar permisos
+RUN chown -R appuser:appuser /app
+
+# Cambiar a usuario no root
+USER appuser
 
 EXPOSE 8000
 

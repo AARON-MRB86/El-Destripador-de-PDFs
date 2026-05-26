@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 
 from App.api.Routes.document import router as documents_router
 from App.config.settings import settings
@@ -16,6 +17,7 @@ app = FastAPI(
 )
 
 app.include_router(documents_router, prefix=settings.api_v1_prefix)
+app.mount("/static", StaticFiles(directory="App/static"), name="static")
 
 HOME_PAGE = """
 <!DOCTYPE html>
@@ -53,6 +55,9 @@ HOME_PAGE = """
         <div>
           <a href="/docs" style="text-decoration:none;"><button class="secondary">Abrir documentación /api</button></a>
         </div>
+      </div>
+      <div style="text-align:center; margin: 18px 0;">
+        <img src="/static/images/WhatsApp%20Image%202026-05-11%20at%204.21.17%20PM.jpeg" alt="Banner de PDF" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);" />
       </div>
       <form id="uploadForm">
         <label>
