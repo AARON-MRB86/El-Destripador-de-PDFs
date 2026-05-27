@@ -1,3 +1,6 @@
+"""Pruebas unitarias para el servicio de documentos.
+Estas pruebas verifican la correcta normalización de nombres de archivos, cálculo de checksums, generación de referencias en memoria."""
+
 import hashlib
 import importlib.util
 import pathlib

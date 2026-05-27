@@ -1,3 +1,6 @@
+"""Pruebas unitarias para el modelo Documento.
+Estas pruebas verifican que el modelo `Document` se inicializa correctamente con los valores predetermin"""
+
 from App.models.documento import Document
 
 

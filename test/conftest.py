@@ -1,3 +1,6 @@
+"""Fixtures para pruebas unitarias de repositorios y validaciones.
+Estos fixtures proporcionan objetos simulados y datos de prueba para facilitar la escritura de pruebas unitarias"""
+
 import pytest
 from unittest.mock import MagicMock
 

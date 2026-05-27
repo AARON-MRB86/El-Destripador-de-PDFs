@@ -252,3 +252,4 @@ async def download_document_text(doc_id: int) -> PlainTextResponse:
         media_type="text/plain; charset=utf-8",
         headers={"Content-Disposition": f"attachment; filename=pdf-extract-{doc_id}.txt"},
     )
+

@@ -1,3 +1,7 @@
+"""Script para verificar que la aplicación se importa correctamente sin errores.
+Ejecutar este script ayuda a identificar problemas de importación o errores de sintaxis en los archivos de la aplicación antes de iniciar el servidor.
+"""
+
 import traceback
 
 try:

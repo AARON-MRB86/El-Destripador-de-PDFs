@@ -1,11 +1,11 @@
-"""Simple healthcheck poller for the local API.
+"""Ventana de estado simple para la API local.
 
-Usage: run this from the project root with the venv python:
+Uso: ejecutar desde el root del proyecto con el venv de python:
 
     .venv\Scripts\python.exe scripts\verify_health.py
 
-It will try for up to 60 seconds to GET http://localhost:8000/health
-and exit 0 on success, non-zero on failure.
+Intentará obtener la informacion de salud de http://localhost:8000/health durante 60 segundos.
+Saldrá con codigo 0 si la solicitud es exitosa, o con un codigo distinto a 0 si falla.
 """
 import sys
 import time

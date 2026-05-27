@@ -1,3 +1,6 @@
+"""Pruebas unitarias para el repositorio de documentos.
+Estas pruebas verifican la correcta serialización, deserialización y generación de IDs en el `DocumentRepository`."""
+
 from unittest.mock import MagicMock
 
 from App.repositories.documento_repository import DocumentRepository

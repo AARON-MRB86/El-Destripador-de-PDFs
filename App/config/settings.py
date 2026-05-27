@@ -1,4 +1,4 @@
-"""Application settings and configuration."""
+"""Configuracion y ajustes de la aplicación"""
 
 from typing import Any, Optional
 
@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Application configuration settings"""
+    """Ajustes de configuración para la aplicación"""
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
 

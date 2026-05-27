@@ -1,43 +1,43 @@
-"""Custom application exceptions."""
+"""Excepciones de aplicacion personalizadas."""
 
 
 class DocumentException(Exception):
-    """Base exception for document operations."""
+    """Exception base para operaciones con documentos."""
 
     pass
 
 
 class DocumentNotFoundError(DocumentException):
-    """Raised when a document is not found."""
+    """Generado cuando no se encuentra un documento."""
 
     pass
 
 
 class DuplicateDocumentError(DocumentException):
-    """Raised when a document with same checksum already exists."""
+    """Generado cuando ya existe un documento con el mismo checksum."""
 
     pass
 
 
 class InvalidPdfError(DocumentException):
-    """Raised when PDF validation fails."""
+    """Generado cuando la validación de PDF falla."""
 
     pass
 
 
 class InvalidFilenameError(DocumentException):
-    """Raised when filename is invalid."""
+    """Generado cuando el nombre de archivo es inválido."""
 
     pass
 
 
 class FileSizeExceededError(DocumentException):
-    """Raised when file size exceeds maximum allowed."""
+    """Generado cuando el tamaño del archivo excede el máximo permitido."""
 
     pass
 
 
 class PdfExtractionError(DocumentException):
-    """Raised when PDF text extraction fails."""
+    """Generado cuando falla la extracción de texto de un PDF."""
 
     pass
