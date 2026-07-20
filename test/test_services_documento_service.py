@@ -12,7 +12,7 @@ import pytest
 def _load_service_class():
     try:
         # Prefer normal import if package is available
-        from App.services.documento_service import DocumentService
+        from app.services.documento_service import DocumentService
 
         return DocumentService
     except Exception:

@@ -3,8 +3,8 @@ Estas pruebas verifican la correcta serialización, deserialización y generaci�
 
 from unittest.mock import MagicMock
 
-from App.repositories.documento_repository import DocumentRepository
-from App.models.documento import Document
+from app.repositories.documento_repository import DocumentRepository
+from app.models.documento import Document
 
 
 class FakeDB:
