@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  dragonfly:
+    image: docker.io/dragonfly/dragonfly:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - DF_API_KEY=changeme
+    restart: unless-stopped
+
+# Este servicio se prepara como infraestructura independiente.
+# No está integrado con el código de la aplicación actual.
