@@ -4,11 +4,12 @@ Este directorio contiene la infraestructura necesaria para ejecutar MongoDB como
 
 ## Iniciar MongoDB
 
-1. Copia `.env-example` a `.env`:
+1. Copia `.env-example` a `.env` y reemplaza valores sensibles:
 
 ```bash
 cd services/mongodb
 cp .env-example .env
+# Edita .env y reemplaza las contraseñas (no subir .env al repo)
 ```
 
 2. Inicia el servicio:
@@ -36,29 +37,32 @@ docker compose up -d
 
 Hemos incluido un cliente web ligero `mongo-express` para administración en desarrollo.
 
-Acceso (por defecto):
+Acceso (desarrollo):
 
 - URL: http://localhost:8081
-- Usuario: `admin`
-- Contraseña: `password`
+- Usuario: `admin` (por defecto en `.env-example`)
+- Contraseña: la que configures en `MONGO_EXPRESS_PASSWORD` dentro de tu `.env`
 
-Estos valores vienen de `services/mongodb/.env` si lo copias desde `.env-example`.
+Estos valores se leen desde `services/mongodb/.env` si lo copias desde `.env-example`.
 
-Para cambiar credenciales, crea `services/mongodb/.env` y modifica:
+Ejemplo rápido para cambiar credenciales y levantar la pila (desarrollo):
 
-```text
-MONGO_INITDB_ROOT_USERNAME=admin
-MONGO_INITDB_ROOT_PASSWORD=<tu_password_segura>
-MONGO_EXPRESS_USER=admin
-MONGO_EXPRESS_PASSWORD=<tu_password_segura>
-MONGO_EXPRESS_PORT=8081
-```
-
-Levantar los servicios:
-
-```powershell
+```bash
 cd services/mongodb
+cp .env-example .env
+# editar .env -> reemplazar REPLACE_WITH_SECURE_PASSWORD
 docker compose --env-file .env up -d
 ```
 
-Luego abre `http://localhost:8081` y autentica con las credenciales definidas.
+Buenas prácticas de seguridad:
+
+- No subas nunca tu `.env` al repositorio. Añade `.env` a `.gitignore` local si hace falta.
+- Para entornos de producción usa mecanismos de secretos (Docker Secrets, Vault, Kubernetes Secrets). Ejemplo sencillo con Docker Swarm:
+
+```bash
+# crear secret (Swarm):
+printf "%s" "mi_contraseña_supersegura" | docker secret create mongo_root_password -
+# en tu stack/compose (Swarm) referencia el secret en lugar de poner la contraseña en .env
+```
+
+Si quieres, adapto el `docker-compose.yml` para leer secretos en un entorno Swarm/producción.
