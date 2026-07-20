@@ -11,7 +11,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY pyproject.toml README.md ./
 COPY app ./app
-COPY App ./App
+RUN mkdir -p App \
+    && printf "import os\n__path__.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app')))\n" > App/__init__.py
+RUN mkdir -p App/static \
+    && if [ -d app/static ]; then cp -r app/static/* App/static/ || true; fi
 
 RUN pip install --upgrade pip setuptools wheel \
     && pip install --no-cache-dir .
