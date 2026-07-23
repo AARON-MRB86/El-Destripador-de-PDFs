@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 from pymongo import ReturnDocument
 from pymongo.database import Database
 
-from app.models.documento import Document, utcnow
+from App.models.documento import Document, utcnow
 
 
 class DocumentRepository:

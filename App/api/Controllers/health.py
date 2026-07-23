@@ -1,4 +1,4 @@
-from app.utils.database import ping_database
+from App.utils.database import ping_database
 
 
 def ping() -> dict:

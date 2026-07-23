@@ -4,9 +4,9 @@ from typing import Any, List
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile, status
 
-from app.schemas import DocumentResponse, DocumentUpdate
-from app.services import DocumentService
-from app.utils.database import get_db
+from App.schemas import DocumentResponse, DocumentUpdate
+from App.services import DocumentService
+from App.utils.database import get_db
 
 router = APIRouter(prefix="/documents", tags=["documentos"])
 
