@@ -19,6 +19,19 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.13'
+      - name: Debug environment
+        run: |
+          echo "--- Python & pip ---"
+          python -V || true
+          pip --version || true
+          echo "--- pip freeze ---"
+          pip freeze || true
+          echo "--- Python executable & platform ---"
+          python -c "import sys,platform; print(sys.executable); print(platform.platform())" || true
+          echo "--- ls repo root ---"
+          ls -la || true
+          echo "--- env keys (redacted by Actions if secrets) ---"
+          env | sort || true
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -30,7 +43,7 @@ jobs:
           DATABASE_URL: mongodb://localhost:27017
           DATABASE_NAME: test_db
         run: |
-          python -m pytest -q
+          python -m pytest -vv
 
   build-image:
     runs-on: ubuntu-latest
