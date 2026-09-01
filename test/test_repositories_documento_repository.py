@@ -1,7 +1,7 @@
 """Pruebas unitarias para el repositorio de documentos.
 Estas pruebas verifican la correcta serialización, deserialización y generación de IDs en el `DocumentRepository`."""
 
-from App.models.documento import Document
+from app.models.documento import Document
 
 
 def test_serialize_deserialize_roundtrip(repo):

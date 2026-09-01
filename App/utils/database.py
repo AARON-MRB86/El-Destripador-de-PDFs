@@ -13,7 +13,7 @@ from pymongo import ASCENDING, MongoClient
 from pymongo.database import Database
 from pymongo.errors import PyMongoError
 
-from App.config import settings
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 

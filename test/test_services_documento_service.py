@@ -5,7 +5,7 @@ manejo de documentos inexistentes."""
 
 import pytest
 
-from App.exceptions import DocumentNotFoundError, InvalidFilenameError, InvalidPdfError
+from app.exceptions import DocumentNotFoundError, InvalidFilenameError, InvalidPdfError
 
 
 def test_build_memory_reference(service):

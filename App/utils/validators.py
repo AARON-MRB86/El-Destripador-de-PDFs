@@ -4,8 +4,8 @@ import hashlib
 from pathlib import Path
 from typing import Optional
 
-from App.config import settings
-from App.exceptions import (
+from app.config import settings
+from app.exceptions import (
     FileSizeExceededError,
     InvalidFilenameError,
     InvalidPdfError,

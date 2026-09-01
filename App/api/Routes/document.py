@@ -12,10 +12,10 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from fastapi.responses import PlainTextResponse
 from pymongo.database import Database
 
-from App.repositories import DocumentRepository
-from App.schemas import DocumentResponse, DocumentUpdate
-from App.services import DocumentService
-from App.utils.database import get_db
+from app.repositories import DocumentRepository
+from app.schemas import DocumentResponse, DocumentUpdate
+from app.services import DocumentService
+from app.utils.database import get_db
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 

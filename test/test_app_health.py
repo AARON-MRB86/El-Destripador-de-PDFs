@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from App.main import app, create_app
+from app.main import app, create_app
 
 
 def test_create_app_returns_fastapi_app():

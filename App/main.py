@@ -5,11 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from App.api.Controllers.health import ping as check_health
-from App.api.Routes.document import router as documents_router
-from App.api.exception_handlers import register_exception_handlers
-from App.config.settings import settings
-from App.utils.database import ensure_indexes
+from app.api.Controllers.health import ping as check_health
+from app.api.Routes.document import router as documents_router
+from app.api.exception_handlers import register_exception_handlers
+from app.config.settings import settings
+from app.utils.database import ensure_indexes
 
 
 def create_app() -> FastAPI:

@@ -9,13 +9,13 @@ from io import BytesIO
 from pathlib import Path
 from typing import List, Optional
 
-from App.exceptions import DocumentNotFoundError, DuplicateDocumentError, InvalidPdfError
-from App.models import Document
-from App.repositories import DocumentRepository
-from App.schemas import DocumentResponse, DocumentUpdate
-from App.utils.legacy_cleanup import remove_if_exists
-from App.utils.pdf_processor import PdfTextExtractor
-from App.utils.validators import ChecksumCalculator, PdfValidator, StringValidator
+from app.exceptions import DocumentNotFoundError, DuplicateDocumentError, InvalidPdfError
+from app.models import Document
+from app.repositories import DocumentRepository
+from app.schemas import DocumentResponse, DocumentUpdate
+from app.utils.legacy_cleanup import remove_if_exists
+from app.utils.pdf_processor import PdfTextExtractor
+from app.utils.validators import ChecksumCalculator, PdfValidator, StringValidator
 
 
 class DocumentService:

@@ -5,7 +5,7 @@ Ejecutar este script ayuda a identificar problemas de importación o errores de 
 import traceback
 
 try:
-    from App.main import app
+    from app.main import app
 
     routes = list(app.router.routes)
     print('OK', 'routes_count=', len(routes))

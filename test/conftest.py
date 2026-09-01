@@ -4,8 +4,8 @@ Estos fixtures proporcionan objetos simulados y datos de prueba para facilitar l
 import pytest
 from unittest.mock import MagicMock
 
-from App.repositories.documento_repository import DocumentRepository
-from App.services.documento_service import DocumentService
+from app.repositories.documento_repository import DocumentRepository
+from app.services.documento_service import DocumentService
 
 
 class FakeDB:

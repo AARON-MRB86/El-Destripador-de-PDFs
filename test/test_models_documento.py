@@ -1,7 +1,7 @@
 """Pruebas unitarias para el modelo Documento.
 Estas pruebas verifican que el modelo `Document` se inicializa correctamente con los valores predetermin"""
 
-from App.models.documento import Document
+from app.models.documento import Document
 
 
 def test_document_defaults_and_fields():
@@ -10,4 +10,6 @@ def test_document_defaults_and_fields():
     assert doc.name == "Test Doc"
     assert doc.file_path.startswith("memory://")
     assert doc.file_size == 10
-    assert not doc.is_processed or isinstance(doc.is_processed, bool)
+    # `is_processed` default must be False (explicit literal avoids tautology)
+    assert isinstance(doc.is_processed, bool)
+    assert doc.is_processed is False
