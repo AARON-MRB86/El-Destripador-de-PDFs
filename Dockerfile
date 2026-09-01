@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copiar archivos necesarios
 COPY pyproject.toml .
 COPY README.md ./
-COPY App/ ./App/
+COPY app/ ./app/
 
 # Instalar dependencias
 RUN pip install --upgrade pip setuptools wheel \
@@ -31,4 +31,4 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["uvicorn", "App.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
