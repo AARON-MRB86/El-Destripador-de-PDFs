@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 from app.api.Controllers.health import ping as check_health
 from app.api.Routes.document import router as documents_router
@@ -35,7 +36,8 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(documents_router, prefix=settings.api_v1_prefix)
-    app.mount("/static", StaticFiles(directory="App/static"), name="static")
+    static_dir = Path(__file__).resolve().parent / "static"
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
     @app.on_event("startup")
     async def startup_event() -> None:
@@ -43,7 +45,7 @@ def create_app() -> FastAPI:
 
     @app.get("/")
     async def home() -> FileResponse:
-        return FileResponse("App/static/index.html")
+        return FileResponse(str(Path(__file__).resolve().parent / "static" / "index.html"))
 
     @app.get("/health")
     def health() -> dict:
