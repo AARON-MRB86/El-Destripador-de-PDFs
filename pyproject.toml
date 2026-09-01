@@ -24,6 +24,7 @@ dev = [
     "flake8>=7.2.0",
     "mypy>=1.20.1",
     "isort>=8.0.1",
+    "pytest-cov>=4.0.0",
 ]
 
 pdf = [
