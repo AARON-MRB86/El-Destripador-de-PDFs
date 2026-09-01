@@ -8,7 +8,8 @@ por `register_exception_handlers` (ver `App.main`).
 
 from typing import List
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi.responses import PlainTextResponse
 from pymongo.database import Database
 
 from App.repositories import DocumentRepository
@@ -65,6 +66,21 @@ async def modify_document(doc_id: int, payload: DocumentUpdate, service: Documen
 async def remove_document(doc_id: int, service: DocumentService = Depends(_get_doc_service)) -> None:
     """Elimina un documento. Lanza 404 si el documento no existe."""
     service.delete_document(doc_id)
+
+
+@router.get("/{doc_id}/download", response_class=PlainTextResponse)
+async def download_document_text(doc_id: int, service: DocumentService = Depends(_get_doc_service)) -> PlainTextResponse:
+    """Devuelve el texto extraído de un documento como archivo de texto."""
+    document = service.get_document(doc_id)
+
+    if not document.extracted_text:
+        raise HTTPException(status_code=400, detail="El documento no tiene texto extraído")
+
+    return PlainTextResponse(
+        document.extracted_text,
+        media_type="text/plain; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename=pdf-extract-{doc_id}.txt"},
+    )
 
 
 @router.post("/{doc_id}/extract", response_model=DocumentResponse)
