@@ -1,12 +1,12 @@
 """MongoDB connection helpers and database bootstrap.
 
 Provides a cached `MongoClient` factory, a FastAPI dependency `get_db`,
-and helpers for index creation, pinging and teardown. Supports
-`mongomock://` urls for tests.
+and helpers for index creation and pinging. Supports `mongomock://`
+urls for tests.
 """
 
 from functools import lru_cache
-from typing import Generator, Optional
+from typing import Optional
 import logging
 
 from pymongo import ASCENDING, MongoClient
@@ -42,28 +42,14 @@ def get_client() -> MongoClient:
 	)
 
 
-def close_client() -> None:
-	"""Close the cached MongoClient and clear the cache."""
-	try:
-		client = get_client()
-		client.close()
-	finally:
-		get_client.cache_clear()
-
-
 def get_database() -> Database:
 	"""Return the configured MongoDB database instance."""
 	return get_client()[settings.database_name]
 
 
-def get_db() -> Generator[Database, None, None]:
-	"""FastAPI dependency generator that yields the Database instance."""
-	db = get_database()
-	try:
-		yield db
-	finally:
-		# client lifecycle is managed separately
-		pass
+def get_db() -> Database:
+	"""FastAPI dependency that returns the configured Database instance."""
+	return get_database()
 
 
 def ping_database(timeout_ms: Optional[int] = None) -> bool:
@@ -95,14 +81,3 @@ def ensure_indexes() -> None:
 		raise RuntimeError(
 			"No se pudo conectar a MongoDB. Verifica DATABASE_URL o inicia el servidor antes de levantar la API."
 		) from exc
-
-
-def drop_database() -> None:
-	"""Drop the configured database. Intended for tests or dev cleanup."""
-	try:
-		client = get_client()
-		client.drop_database(settings.database_name)
-	except PyMongoError:
-		logger.exception("Failed to drop database")
-		raise
-

@@ -26,15 +26,20 @@ La aplicación permite cargar archivos PDF con un nombre asociado, validar su fo
 
     El-Destripador-de-PDFs/
     ├── App/
-    │   ├── api/                # Rutas y controladores
+    │   ├── api/                # Rutas, controladores y exception handlers
     │   ├── config/             # Configuración de la aplicación
-    │   ├── domain/             # Entidades y modelos de dominio
-    │   ├── infrastructure/     # Repositorios e integración con MongoDB
-    │   ├── models/             # Modelos de dominio
-    │   ├── repositories/       # Acceso a datos
-    │   ├── schemas/            # Esquemas de validación y respuesta
-    │   ├── services/           # Lógica de negocio
-    │   └── utils/              # Utilidades de base de datos
+    │   ├── models/             # Modelos de dominio (pydantic)
+    │   ├── repositories/       # Acceso a datos (MongoDB)
+    │   ├── schemas/            # Esquemas de validación y respuesta (DTOs)
+    │   ├── services/           # Lógica de negocio (orquestación)
+    │   ├── static/             # Página web servida en "/" y assets estáticos
+    │   ├── utils/              # Validación de PDFs, checksum, extracción de texto, conexión a DB
+    │   └── exceptions.py       # Excepciones de dominio
+    ├── services/mongodb/       # Infraestructura de MongoDB para desarrollo local
+    ├── scripts/                # Scripts auxiliares (chequeo de imports, healthcheck)
+    ├── test/                   # Suite de tests unitarios
+    ├── Dockerfile
+    ├── docker-compose.yml
     ├── pyproject.toml          # Configuración del proyecto y dependencias
     └── README.md
 
@@ -60,6 +65,9 @@ Dependencias de desarrollo opcionales:
 - isort
 
 ## Endpoints principales
+
+### GET `/health`
+Health check para orquestadores (Docker/Kubernetes/balanceadores). Devuelve `{"status": "ok"|"degraded", "database": bool}`.
 
 ### POST `/documents`
 Crear un documento a partir de un PDF subido.
@@ -160,7 +168,7 @@ pip install -e ".[dev,pdf]"
 Inicia el servidor con Uvicorn:
 
 ```powershell
-uvicorn app.main:app --reload
+uvicorn App.main:app --reload
 ```
 
 La API estará disponible en:
@@ -181,4 +189,5 @@ pytest
 
 - Los PDFs se validan en memoria.
 - Se comprueba el checksum para evitar registros duplicados.
-- La arquitectura del proyecto está separada en capas de rutas, servicios, dominio e infraestructura.
+- La arquitectura está separada en capas de rutas (`api`), servicios (`services`), acceso a datos (`repositories`) y utilidades de validación/extracción (`utils`), sin capas duplicadas o sin uso.
+- Los errores de negocio se modelan como excepciones de dominio (`App/exceptions.py`) y se traducen a respuestas HTTP mediante `register_exception_handlers` (`App/api/exception_handlers.py`), registrado al iniciar la app.

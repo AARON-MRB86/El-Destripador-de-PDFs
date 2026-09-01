@@ -5,12 +5,12 @@ Ejecutar este script ayuda a identificar problemas de importación o errores de 
 import traceback
 
 try:
-    from App.main import create_app
-    app = create_app()
+    from App.main import app
+
     routes = list(app.router.routes)
     print('OK', 'routes_count=', len(routes))
     for r in routes:
-        print(r.path)
+        print(getattr(r, 'path', r))
 except Exception as e:
     traceback.print_exc()
     print('ERROR', e)

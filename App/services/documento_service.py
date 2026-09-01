@@ -1,31 +1,37 @@
-"""Document service - Business logic."""
+"""Document service - Business logic.
+
+Orchestrates document CRUD and PDF processing. Validation, checksum
+calculation and text extraction are delegated to `App.utils` so this
+service has a single responsibility: coordinating the workflow.
+"""
 
 from io import BytesIO
 from pathlib import Path
-from typing import Any, List, Optional
-import hashlib
+from typing import List, Optional
 
-from App.config import settings
+from App.exceptions import DocumentNotFoundError, DuplicateDocumentError, InvalidPdfError
 from App.models import Document
 from App.repositories import DocumentRepository
 from App.schemas import DocumentResponse, DocumentUpdate
+from App.utils.legacy_cleanup import remove_if_exists
+from App.utils.pdf_processor import PdfTextExtractor
+from App.utils.validators import ChecksumCalculator, PdfValidator, StringValidator
 
 
 class DocumentService:
     """Service for document business logic."""
-    PDF_SIGNATURE = b"%PDF-"
 
-    def __init__(self, db: Any):
+    def __init__(self, repository: DocumentRepository):
         """
-        Initialize service with database session.
+        Initialize service with an injected repository.
 
         Args:
-            db: Database handle
+            repository: Repository used to persist and query documents.
         """
-        self.repository = DocumentRepository(db)
+        self.repository = repository
 
     def create_document(
-        self, name: str, original_filename: str | None, file_content: bytes
+        self, name: str, original_filename: Optional[str], file_content: bytes
     ) -> DocumentResponse:
         """
         Create a new document from uploaded PDF bytes.
@@ -38,18 +44,17 @@ class DocumentService:
         Returns:
             Created document response
         """
-        normalized_name = name.strip()
-        if not normalized_name:
-            raise ValueError("El nombre del documento es obligatorio")
-
-        normalized_filename = self._normalize_original_filename(original_filename)
-        self._validate_uploaded_pdf(normalized_filename, file_content)
-        checksum = self._calculate_checksum(file_content)
+        normalized_name = StringValidator.validate_required_string(
+            name, "nombre del documento"
+        )
+        normalized_filename = PdfValidator.validate_filename(original_filename)
+        PdfValidator.validate_bytes(file_content)
+        checksum = ChecksumCalculator.from_bytes(file_content)
 
         if self.repository.get_by_checksum(checksum):
-            raise ValueError("Ya existe un documento con el mismo checksum")
+            raise DuplicateDocumentError("Ya existe un documento con el mismo checksum")
 
-        extracted_text = self._extract_pdf_text_from_bytes(file_content)
+        extracted_text = PdfTextExtractor.extract(BytesIO(file_content))
         document = Document(
             name=normalized_name,
             original_filename=normalized_filename,
@@ -63,7 +68,7 @@ class DocumentService:
         created_document = self.repository.create(document)
         return DocumentResponse.model_validate(created_document)
 
-    def get_document(self, document_id: int) -> Optional[DocumentResponse]:
+    def get_document(self, document_id: int) -> DocumentResponse:
         """
         Get document by ID.
 
@@ -71,12 +76,12 @@ class DocumentService:
             document_id: Document ID
 
         Returns:
-            Document response if found
+            Document response
+
+        Raises:
+            DocumentNotFoundError: If no document matches `document_id`
         """
-        document = self.repository.get_by_id(document_id)
-        if not document:
-            return None
-        return DocumentResponse.model_validate(document)
+        return DocumentResponse.model_validate(self._get_or_raise(document_id))
 
     def get_all_documents(
         self, skip: int = 0, limit: int = 10
@@ -96,7 +101,7 @@ class DocumentService:
 
     def update_document(
         self, document_id: int, document_data: DocumentUpdate
-    ) -> Optional[DocumentResponse]:
+    ) -> DocumentResponse:
         """
         Update document.
 
@@ -105,189 +110,92 @@ class DocumentService:
             document_data: Update schema
 
         Returns:
-            Updated document response if found
+            Updated document response
+
+        Raises:
+            DocumentNotFoundError: If no document matches `document_id`
         """
+        self._get_or_raise(document_id)
+
         update_data = document_data.model_dump(exclude_unset=True)
         if "name" in update_data:
-            normalized_name = update_data["name"].strip()
-            if not normalized_name:
-                raise ValueError("El nombre del documento es obligatorio")
-            update_data["name"] = normalized_name
+            update_data["name"] = StringValidator.validate_required_string(
+                update_data["name"], "nombre del documento"
+            )
 
-        document = self.repository.update(document_id, update_data)
+        updated_document = self.repository.update(document_id, update_data)
+        return DocumentResponse.model_validate(updated_document)
 
-        if not document:
-            return None
-
-        return DocumentResponse.model_validate(document)
-
-    def delete_document(self, document_id: int) -> bool:
+    def delete_document(self, document_id: int) -> None:
         """
-        Delete document.
+        Delete document, removing any legacy on-disk file.
 
         Args:
             document_id: Document ID
 
-        Returns:
-            True if deleted, False if not found
+        Raises:
+            DocumentNotFoundError: If no document matches `document_id`
         """
-        document = self.repository.get_by_id(document_id)
-        if not document:
-            return False
+        document = self._get_or_raise(document_id)
+        self.repository.delete(document_id)
+        remove_if_exists(document.file_path)
 
-        deleted = self.repository.delete(document_id)
-        if deleted and document.file_path:
-            legacy_path = Path(document.file_path)
-            if legacy_path.is_file():
-                legacy_path.unlink(missing_ok=True)
-        return deleted
-
-    def extract_text(self, document_id: int) -> Optional[DocumentResponse]:
+    def extract_text(self, document_id: int) -> DocumentResponse:
         """
         Extract text from PDF document.
+
+        Documents processed in memory already have their text stored and
+        are returned as-is. Legacy documents stored on disk are
+        re-validated against their stored checksum before extraction.
 
         Args:
             document_id: Document ID
 
         Returns:
             Updated document response
+
+        Raises:
+            DocumentNotFoundError: If no document matches `document_id`
+        """
+        document = self._get_or_raise(document_id)
+
+        if document.is_processed and document.extracted_text is not None:
+            return DocumentResponse.model_validate(document)
+
+        file_path = Path(document.file_path)
+        PdfValidator.validate_file(file_path, document.file_size)
+
+        current_checksum = ChecksumCalculator.from_file(file_path)
+        if current_checksum != document.checksum:
+            raise InvalidPdfError(
+                "El archivo del documento ya no coincide con el checksum almacenado"
+            )
+
+        extracted_text = PdfTextExtractor.extract(str(file_path))
+        updated_document = self.repository.update(
+            document_id, {"extracted_text": extracted_text, "is_processed": True}
+        )
+        return DocumentResponse.model_validate(updated_document)
+
+    def _get_or_raise(self, document_id: int) -> Document:
+        """
+        Fetch a document by ID or raise if it doesn't exist.
+
+        Centralizes the "document not found" message construction.
+
+        Args:
+            document_id: Document ID
+
+        Returns:
+            The stored document
+
+        Raises:
+            DocumentNotFoundError: If no document matches `document_id`
         """
         document = self.repository.get_by_id(document_id)
         if not document:
-            return None
-
-        try:
-            if document.is_processed and document.extracted_text is not None:
-                return DocumentResponse.model_validate(document)
-
-            file_path = Path(document.file_path)
-            self._validate_pdf_file(file_path, document.file_size)
-
-            current_checksum = self._calculate_file_checksum(file_path)
-            if current_checksum != document.checksum:
-                raise ValueError(
-                    "El archivo del documento ya no coincide con el checksum almacenado"
-                )
-
-            extracted_text = self._extract_pdf_text_from_file(file_path)
-
-            update_data = {
-                "extracted_text": extracted_text,
-                "is_processed": True,
-            }
-            updated_doc = self.repository.update(document_id, update_data)
-            return DocumentResponse.model_validate(updated_doc)
-
-        except ValueError:
-            raise
-        except Exception as exc:
-            raise ValueError(f"Error al extraer el texto: {str(exc)}")
-
-    def _normalize_original_filename(self, original_filename: str | None) -> str:
-        """
-        Normalize the uploaded filename for safe persistence.
-
-        Args:
-            original_filename: Original uploaded filename
-
-        Returns:
-            Sanitized filename
-        """
-        if not original_filename:
-            raise ValueError("Se requiere un archivo PDF")
-
-        normalized_filename = Path(original_filename).name.strip()
-        if not normalized_filename:
-            raise ValueError("Se requiere un archivo PDF")
-
-        return normalized_filename
-
-    def _validate_uploaded_pdf(
-        self, original_filename: str | None, file_content: bytes
-    ) -> None:
-        """
-        Validate uploaded PDF bytes before persistence.
-
-        Args:
-            original_filename: Original uploaded filename
-            file_content: Uploaded PDF bytes
-        """
-        if Path(original_filename).suffix.lower() != ".pdf":
-            raise ValueError("Solo se permiten archivos PDF")
-
-        file_size = len(file_content)
-        if file_size == 0:
-            raise ValueError("Archivo PDF invalido")
-
-        if file_size > settings.max_pdf_size_bytes:
-            raise ValueError(
-                "El PDF supera el tamano maximo permitido de "
-                f"{settings.max_pdf_size_bytes} bytes"
-            )
-
-        if file_content[: len(self.PDF_SIGNATURE)] != self.PDF_SIGNATURE:
-            raise ValueError("Archivo PDF invalido")
-
-    def _validate_pdf_file(self, file_path: Path, expected_size: int) -> None:
-        """
-        Validate that the given path points to a stored PDF file with a valid size.
-
-        Args:
-            file_path: Path to the file on disk
-            expected_size: Expected size in bytes
-        """
-        if not file_path.is_file():
-            raise ValueError(f"Archivo no encontrado: {file_path}")
-
-        if file_path.suffix.lower() != ".pdf":
-            raise ValueError("Solo se permiten archivos PDF")
-
-        actual_size = file_path.stat().st_size
-        if actual_size != expected_size:
-            raise ValueError(
-                "El tamano del archivo no coincide: se esperaban "
-                f"{expected_size} bytes y se encontraron {actual_size}"
-            )
-
-        if actual_size > settings.max_pdf_size_bytes:
-            raise ValueError(
-                "El PDF supera el tamano maximo permitido de "
-                f"{settings.max_pdf_size_bytes} bytes"
-            )
-
-        with file_path.open("rb") as pdf_file:
-            if pdf_file.read(len(self.PDF_SIGNATURE)) != self.PDF_SIGNATURE:
-                raise ValueError("Archivo PDF invalido")
-
-    def _calculate_checksum(self, file_content: bytes) -> str:
-        """
-        Calculate the SHA-256 checksum of uploaded bytes.
-
-        Args:
-            file_content: Uploaded PDF bytes
-
-        Returns:
-            SHA-256 checksum as a hex string
-        """
-        digest = hashlib.sha256()
-        digest.update(file_content)
-        return digest.hexdigest()
-
-    def _calculate_file_checksum(self, file_path: Path) -> str:
-        """
-        Calculate the SHA-256 checksum of a stored file.
-
-        Args:
-            file_path: Path to the stored file on disk
-
-        Returns:
-            SHA-256 checksum as a hex string
-        """
-        digest = hashlib.sha256()
-        with file_path.open("rb") as pdf_file:
-            for chunk in iter(lambda: pdf_file.read(8192), b""):
-                digest.update(chunk)
-        return digest.hexdigest()
+            raise DocumentNotFoundError(f"Documento {document_id} no encontrado")
+        return document
 
     def _build_memory_reference(self, checksum: str) -> str:
         """
@@ -300,55 +208,3 @@ class DocumentService:
             Stable reference string stored for backward compatibility
         """
         return f"memory://documents/{checksum}.pdf"
-
-    def _extract_pdf_text_from_bytes(self, file_content: bytes) -> str:
-        """
-        Extract text from uploaded PDF bytes using pypdf.
-
-        Args:
-            file_content: Uploaded PDF bytes
-
-        Returns:
-            Extracted text with normalized page separation
-        """
-        return self._extract_pdf_text(BytesIO(file_content))
-
-    def _extract_pdf_text_from_file(self, file_path: Path) -> str:
-        """
-        Extract text from a legacy stored PDF file using pypdf.
-
-        Args:
-            file_path: Path to the PDF file on disk
-
-        Returns:
-            Extracted text with normalized page separation
-        """
-        return self._extract_pdf_text(str(file_path))
-
-    def _extract_pdf_text(self, pdf_source: BytesIO | str) -> str:
-        """
-        Extract text from a PDF source using pypdf.
-
-        Args:
-            pdf_source: File-like object in memory or a file path
-
-        Returns:
-            Extracted text with normalized page separation
-        """
-        try:
-            from pypdf import PdfReader
-        except ImportError as exc:
-            raise ValueError(
-                "La dependencia de extraccion de PDF no esta instalada"
-            ) from exc
-
-        try:
-            reader = PdfReader(pdf_source)
-            page_texts = []
-            for page in reader.pages:
-                text = (page.extract_text() or "").strip()
-                if text:
-                    page_texts.append(text)
-            return "\n\n".join(page_texts)
-        except Exception as exc:
-            raise ValueError(f"Error al extraer el texto: {str(exc)}") from exc

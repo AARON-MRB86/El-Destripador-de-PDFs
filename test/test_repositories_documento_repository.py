@@ -1,26 +1,10 @@
 """Pruebas unitarias para el repositorio de documentos.
 Estas pruebas verifican la correcta serialización, deserialización y generación de IDs en el `DocumentRepository`."""
 
-from unittest.mock import MagicMock
-
-from app.repositories.documento_repository import DocumentRepository
-from app.models.documento import Document
+from App.models.documento import Document
 
 
-class FakeDB:
-    def __init__(self):
-        self._cols = {
-            "documents": MagicMock(),
-            "counters": MagicMock(),
-        }
-
-    def __getitem__(self, name):
-        return self._cols[name]
-
-
-def test_serialize_deserialize_roundtrip():
-    db = FakeDB()
-    repo = DocumentRepository(db)
+def test_serialize_deserialize_roundtrip(repo):
     doc = Document(id=1, name="A", file_path="p", checksum="c", file_size=2)
     payload = repo._serialize(doc)
     assert isinstance(payload, dict)
@@ -31,8 +15,6 @@ def test_serialize_deserialize_roundtrip():
     assert deserialized.name == "A"
 
 
-def test_next_document_id_increments():
-    db = FakeDB()
-    db._cols["counters"].find_one_and_update.return_value = {"value": 5}
-    repo = DocumentRepository(db)
-    assert repo._next_document_id() == 5
+def test_next_id_increments(repo, fake_db):
+    fake_db._cols["counters"].find_one_and_update.return_value = {"value": 5}
+    assert repo._next_id() == 5

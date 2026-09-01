@@ -1,54 +1,33 @@
 """Pruebas unitarias para el servicio de documentos.
-Estas pruebas verifican la correcta normalización de nombres de archivos, cálculo de checksums, generación de referencias en memoria."""
-
-import hashlib
-import importlib.util
-import pathlib
-from unittest.mock import MagicMock
+Verifican la orquestación de DocumentService: construcción de referencias en
+memoria, propagación de errores de validación (delegados a App.utils) y el
+manejo de documentos inexistentes."""
 
 import pytest
 
-
-def _load_service_class():
-    try:
-        # Prefer normal import if package is available
-        from app.services.documento_service import DocumentService
-
-        return DocumentService
-    except Exception:
-        # Fallback: load module directly by path
-        repo_root = pathlib.Path(__file__).resolve().parents[1]
-        module_path = repo_root / "App" / "services" / "documento_service.py"
-        spec = importlib.util.spec_from_file_location("doc_service", str(module_path))
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module.DocumentService
+from App.exceptions import DocumentNotFoundError, InvalidFilenameError, InvalidPdfError
 
 
-def test_normalize_and_checksum_and_build_reference():
-    DocumentService = _load_service_class()
-    svc = DocumentService(db=MagicMock())
+def test_build_memory_reference(service):
+    assert service._build_memory_reference("deadbeef") == "memory://documents/deadbeef.pdf"
 
+
+def test_create_document_requires_name(service, tmp_pdf_bytes):
     with pytest.raises(ValueError):
-        svc._normalize_original_filename(None)
-
-    checksum = svc._calculate_checksum(b"abc")
-    assert checksum == hashlib.sha256(b"abc").hexdigest()
-    assert svc._build_memory_reference("deadbeef") == "memory://documents/deadbeef.pdf"
+        service.create_document("   ", "file.pdf", tmp_pdf_bytes)
 
 
-def test_validate_uploaded_pdf_basic():
-    DocumentService = _load_service_class()
-    svc = DocumentService(db=MagicMock())
+def test_create_document_rejects_non_pdf_filename(service, tmp_pdf_bytes):
+    with pytest.raises(InvalidFilenameError):
+        service.create_document("Doc", "file.txt", tmp_pdf_bytes)
 
-    # wrong suffix
-    with pytest.raises(ValueError):
-        svc._validate_uploaded_pdf("file.txt", b"%PDF-" + b"data")
 
-    # zero size
-    with pytest.raises(ValueError):
-        svc._validate_uploaded_pdf("file.pdf", b"")
+def test_create_document_rejects_invalid_signature(service):
+    with pytest.raises(InvalidPdfError):
+        service.create_document("Doc", "file.pdf", b"NOTPDF")
 
-    # invalid signature
-    with pytest.raises(ValueError):
-        svc._validate_uploaded_pdf("file.pdf", b"NOTPDF")
+
+def test_get_document_raises_when_missing(service, repo):
+    repo.collection.find_one.return_value = None
+    with pytest.raises(DocumentNotFoundError):
+        service.get_document(999)

@@ -4,7 +4,8 @@ Estos fixtures proporcionan objetos simulados y datos de prueba para facilitar l
 import pytest
 from unittest.mock import MagicMock
 
-from app.repositories.documento_repository import DocumentRepository
+from App.repositories.documento_repository import DocumentRepository
+from App.services.documento_service import DocumentService
 
 
 class FakeDB:
@@ -30,6 +31,12 @@ def fake_db():
 def repo(fake_db):
     """Provide a `DocumentRepository` instantiated with the fake DB."""
     return DocumentRepository(fake_db)
+
+
+@pytest.fixture
+def service(repo):
+    """Provide a `DocumentService` instantiated with a repository backed by the fake DB."""
+    return DocumentService(repo)
 
 
 @pytest.fixture

@@ -1,8 +1,7 @@
 """Configuracion y ajustes de la aplicación"""
 
-from typing import Any, Optional
+from typing import Optional
 
-from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -32,34 +31,6 @@ class Settings(BaseSettings):
     api_redoc_url: Optional[str] = "/redoc"
     api_openapi_url: Optional[str] = "/openapi.json"
     cors_allow_origins: Optional[list[str]] = None
-
-    @field_validator("debug", mode="before")
-    @classmethod
-    def parse_debug(cls, value: Any) -> Any:
-        """Accept common environment values for debug mode."""
-        if isinstance(value, str):
-            normalized = value.strip().lower()
-            if normalized in {
-                "1",
-                "true",
-                "yes",
-                "on",
-                "debug",
-                "dev",
-                "development",
-            }:
-                return True
-            if normalized in {
-                "0",
-                "false",
-                "no",
-                "off",
-                "release",
-                "prod",
-                "production",
-            }:
-                return False
-        return value
 
 
 # Create a global settings instance

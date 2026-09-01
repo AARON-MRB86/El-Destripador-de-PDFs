@@ -24,7 +24,7 @@ python -m pytest -q
 4. Ejecutar un test específico:
 
 ```powershell
-python -m pytest test/test_services_documento_service.py::test_validate_uploaded_pdf_basic -q
+python -m pytest test/test_services_documento_service.py::test_create_document_rejects_invalid_signature -q
 ```
 
 Notas:

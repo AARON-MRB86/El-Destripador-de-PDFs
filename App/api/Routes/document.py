@@ -1,15 +1,17 @@
 """Rutas para gestión de documentos (endpoints REST).
 
-Se implementan los endpoints principales para crear, listar,
-actualizar, eliminar y extraer texto de documentos PDF.
-Esta versión conserva la funcionalidad pero utiliza mensajes
-y nombres internos distintos al proyecto de referencia.
+Implementa los endpoints principales para crear, listar, actualizar,
+eliminar y extraer texto de documentos PDF. Los errores de negocio se
+señalizan con excepciones de `App.exceptions`, manejadas globalmente
+por `register_exception_handlers` (ver `App.main`).
 """
 
-from typing import Any, List
+from typing import List
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, UploadFile, status
+from pymongo.database import Database
 
+from App.repositories import DocumentRepository
 from App.schemas import DocumentResponse, DocumentUpdate
 from App.services import DocumentService
 from App.utils.database import get_db
@@ -17,9 +19,9 @@ from App.utils.database import get_db
 router = APIRouter(prefix="/documents", tags=["documents"])
 
 
-def _get_doc_service(db: Any = Depends(get_db)) -> DocumentService:
+def _get_doc_service(db: Database = Depends(get_db)) -> DocumentService:
     """Dependency: devuelve una instancia del servicio de documentos."""
-    return DocumentService(db)
+    return DocumentService(DocumentRepository(db))
 
 
 @router.post("", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
@@ -35,8 +37,6 @@ async def upload_document(
     try:
         payload = await file.read()
         return service.create_document(name, file.filename, payload)
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     finally:
         await file.close()
 
@@ -52,42 +52,22 @@ async def list_all_documents(
 @router.get("/{doc_id}", response_model=DocumentResponse)
 async def read_document(doc_id: int, service: DocumentService = Depends(_get_doc_service)) -> DocumentResponse:
     """Obtiene los detalles de un documento por su identificador."""
-    doc = service.get_document(doc_id)
-    if not doc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Documento {doc_id} no encontrado")
-    return doc
+    return service.get_document(doc_id)
 
 
 @router.put("/{doc_id}", response_model=DocumentResponse)
 async def modify_document(doc_id: int, payload: DocumentUpdate, service: DocumentService = Depends(_get_doc_service)) -> DocumentResponse:
     """Actualiza campos de un documento existente."""
-    try:
-        updated = service.update_document(doc_id, payload)
-        if not updated:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Documento {doc_id} no encontrado")
-        return updated
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    return service.update_document(doc_id, payload)
 
 
 @router.delete("/{doc_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def remove_document(doc_id: int, service: DocumentService = Depends(_get_doc_service)):
-    """Elimina un documento.
-
-    Lanza 404 si el documento no existe.
-    """
-    ok = service.delete_document(doc_id)
-    if not ok:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Documento {doc_id} no encontrado")
+async def remove_document(doc_id: int, service: DocumentService = Depends(_get_doc_service)) -> None:
+    """Elimina un documento. Lanza 404 si el documento no existe."""
+    service.delete_document(doc_id)
 
 
 @router.post("/{doc_id}/extract", response_model=DocumentResponse)
 async def extract_text(doc_id: int, service: DocumentService = Depends(_get_doc_service)) -> DocumentResponse:
-    """Extrae (o devuelve) el texto de un PDF. Maneja errores de validación."""
-    try:
-        doc = service.extract_text(doc_id)
-        if not doc:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Documento {doc_id} no encontrado")
-        return doc
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    """Extrae (o devuelve) el texto de un PDF."""
+    return service.extract_text(doc_id)
